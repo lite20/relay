@@ -1,0 +1,11 @@
+{
+  "files.exclude": {
+    "*.exe": "explorerExcludedFiles",
+    "*.exe~": "explorerExcludedFiles",
+    "*.dll": "explorerExcludedFiles",
+    "*.so": "explorerExcludedFiles",
+    "*.dylib": "explorerExcludedFiles",
+    "*.test": "explorerExcludedFiles",
+    "*.out": "explorerExcludedFiles"
+  }
+}

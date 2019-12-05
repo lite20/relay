@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	"fmt"
 	"log"
 	"net"
 )
@@ -16,16 +16,29 @@ func main() {
 
 // handles incoming private data
 func ingestPrivate() {
-	ln, _ := net.Listen("tcp", ":8081")
+	ln, err := net.Listen("tcp", ":3095")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer ln.Close()
+	fmt.Println("TCP on port 3095")
 
 	// iterate, handling one private directive at a time
+	buf := make([]byte, buffSize)
 	for {
 		// accept connection on port
 		conn, _ := ln.Accept()
+		defer conn.Close()
 
-		// read until newline
-		op, _ := bufio.NewReader(conn).ReadString('\n')
-		doPrivateOp(op)
+		for {
+			// read until connection close
+			if _, err := conn.Read(buf); err != nil {
+				break
+			}
+
+			doPrivateOp(buf)
+		}
 	}
 }
 
@@ -39,11 +52,12 @@ func ingestPublic() {
 		log.Fatal(err)
 	}
 
+	fmt.Println("UDP on port 23498")
 	defer sock.Close()
 
 	// loop handling all client requests
+	buf := make([]byte, buffSize)
 	for {
-		buf := make([]byte, buffSize)
 		n, addr, err := sock.ReadFrom(buf)
 		if err != nil {
 			continue
@@ -56,22 +70,33 @@ func ingestPublic() {
 
 // performs an operation from the public ingest
 func doPublicOp(sem chan struct{}, pc net.PacketConn, addr net.Addr, buf []byte) {
-	// TODO: parse op code and perform action
-	// possible public operations:
-	// - send to room
-	// - disconnect
+	switch op := buf[0]; op {
+	case 0:
+		fmt.Println("disconnect operation")
+	case 1:
+		fmt.Println("echo operation")
+	default:
+		fmt.Println("Unknown op")
+	}
 
 	// free up a slot in the semaphore for the next packet
 	<-sem
 }
 
 // performs an operation from the private ingest
-func doPrivateOp(op string) {
-	// TODO: parse op code and perform action
-	// possible private operations:
-	// - request room
-	// - close room
-	// - send to room
-	// - add user
-	// - evict user
+func doPrivateOp(buf []byte) {
+	switch op := buf[0]; op {
+	case 1:
+		fmt.Println("request room operation")
+	case 2:
+		fmt.Println("close room operation")
+	case 3:
+		fmt.Println("echo to room operation")
+	case 4:
+		fmt.Println("add user to room operation")
+	case 5:
+		fmt.Println("remove user from room operation")
+	default:
+		fmt.Println("Unknown private op")
+	}
 }
